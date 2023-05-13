@@ -57,7 +57,7 @@ void UPSOLevelLoadHelper::Activate()
     switch (Operation)
     {
     case EPSOState::Preload:
-        // Initialise PSO Rate to full-fat precompile mode
+        // Initialise PSO Rate to precompile mode
         FShaderPipelineCache::SetBatchMode(FShaderPipelineCache::BatchMode::Precompile);
         if (FShaderPipelineCache::IsBatchingPaused())
         {

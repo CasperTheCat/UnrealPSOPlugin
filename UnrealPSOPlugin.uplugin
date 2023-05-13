@@ -16,7 +16,7 @@
 	"Installed": false,
 	"Modules": [
 		{
-			"Name": "PipelineCacheDB",
+			"Name": "UnrealPSOPlugin",
 			"Type": "Runtime",
 			"LoadingPhase": "Default"
 		}

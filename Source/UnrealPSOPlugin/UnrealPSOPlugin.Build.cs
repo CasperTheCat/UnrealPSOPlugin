@@ -2,9 +2,9 @@
 
 using UnrealBuildTool;
 
-public class PipelineCacheDB : ModuleRules
+public class UnrealPSOPlugin : ModuleRules
 {
-	public PipelineCacheDB(ReadOnlyTargetRules Target) : base(Target)
+	public UnrealPSOPlugin(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 		

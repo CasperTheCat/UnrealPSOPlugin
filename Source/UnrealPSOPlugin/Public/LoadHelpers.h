@@ -17,7 +17,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnAsyncPSOUpdated, int, remainingS
 DECLARE_DELEGATE_OneParam(FOnAsyncPSOLoadedInternalCallback, int);
 
 UCLASS()
-class PIPELINECACHEDB_API UPSOLevelLoadHelper : public UBlueprintAsyncActionBase
+class UNREALPSOPLUGIN_API UPSOLevelLoadHelper : public UBlueprintAsyncActionBase
 {
     GENERATED_BODY()
 public:

@@ -6,13 +6,13 @@
 #include "GameFramework/GameStateBase.h"
 #include "UObject/Object.h"
 
-#include "PipelineGameState.generated.h"
+#include "UnrealPSOPluginGameState.generated.h"
 
 /**
  *
  */
 UCLASS()
-class PIPELINECACHEDB_API APipelineGameState : public AGameStateBase
+class UNREALPSOPLUGIN_API AUnrealPSOPluginGameState : public AGameStateBase
 {
     GENERATED_BODY()
 };

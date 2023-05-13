@@ -1,6 +1,6 @@
 ﻿// Copyright Chris Anderson, 2022. All Rights Reserved.
 
-#include "PipelineGameInstance.h"
+#include "UnrealPSOPluginGameInstance.h"
 
 #include "Dom/JsonObject.h"
 #include "HAL/FileManager.h"
@@ -277,9 +277,24 @@ void UPipelineCacheGameInstance::ShutdownInternalPSO()
     }
 }
 
+bool UPipelineCacheGameInstance::UsageMaskComparisonFunction(uint64 ReferenceMask, uint64 PSOMask)
+{
+    if (ReferenceMask == UINT64_MAX)
+    {
+        return true;
+    }
+
+    return ReferenceMask == PSOMask;
+}
+
 // Sets default values for this component's properties
 UPipelineCacheGameInstance::UPipelineCacheGameInstance()
 {
+    // Default to true as the default isn't harmful
+    // I.E. With the UsageMask set, we log PSOs with a usage mask
+    // But the shipping build will ignore the mask and just build
+    // So we can use them automatic PSO mask for precompile
+    SetUsageMaskAutomatically = true;
 }
 
 void UPipelineCacheGameInstance::Shutdown()
@@ -303,39 +318,123 @@ void UPipelineCacheGameInstance::Shutdown()
 
 void UPipelineCacheGameInstance::ReturnToMainMenu()
 {
-    // GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Red, FString("ReturnToMainMenu"));
-
-    // ShutdownInternalPSO();
-
-    // UE_LOG(LogTemp, Warning, TEXT("ReturnToMainMenu"));
-
     Super::ReturnToMainMenu();
 }
 
-void UPipelineCacheGameInstance::Init()
+void UPipelineCacheGameInstance::OnStart()
 {
-    // GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Red, FString("Init"));
+    Super::OnStart();
 
-    // UE_LOG(LogTemp, Warning, TEXT("Init"));
+    // Take the opportunity to nuke the cvar that precompiles.
+    // We don't want this to actually run until we set a mask
+    static const auto CVarPrecompile = IConsoleManager::Get().FindConsoleVariable(TEXT("r.ShaderPipelineCache.StartupMode"));
+    if (CVarPrecompile)
+    {
+        CVarPrecompile->Set(0);
+    }
 
-    // ShutdownInternalPSO();
-    // FPipelineFileCacheManager::Initialize(100);
-
-    Super::Init();
+    // Additionally, set precompile mask for precompile usage
+    if (UsePrecompileMask)
+    {
+        static const auto CVarPrecompileMask =
+            IConsoleManager::Get().FindConsoleVariable(TEXT("r.ShaderPipelineCache.PreCompileMask"));
+        if (CVarPrecompileMask)
+        {
+            CVarPrecompileMask->Set(PrecompileMask);
+        }
+    }
 }
 
 void UPipelineCacheGameInstance::StartGameInstance()
 {
-    // GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Red, FString("StartGameInstance"));
-
-    // UE_LOG(LogTemp, Warning, TEXT("StartGameInstance"));
-
-    // ShutdownInternalPSO();
-    // FShaderPipelineCache::Initialize(GMaxRHIShaderPlatform);
-
-    // FShaderPipelineCache::ClosePipelineFileCache();
-    // FString Name = FApp::GetProjectName();
-    // FShaderPipelineCache::OpenPipelineFileCache(Name, GMaxRHIShaderPlatform)
-
     Super::StartGameInstance();
+}
+
+void UPipelineCacheGameInstance::LoadComplete(const float LoadTime, const FString &MapName)
+{
+    Super::LoadComplete(LoadTime, MapName);
+}
+
+void UPipelineCacheGameInstance::OnWorldChanged(UWorld *OldWorld, UWorld *NewWorld)
+{
+    Super::OnWorldChanged(OldWorld, NewWorld);
+
+#if (UE_BUILD_SHIPPING)
+    if (SetUsageMaskAutomatically && SetUsageMaskAutomaticallyShipping)
+#else
+    if (SetUsageMaskAutomatically)
+#endif
+    {
+        if (BeginCompilationAutomatically)
+        {
+            SetUsageMaskAndCompile(NewWorld);
+        }
+        else
+        {
+            SetUsageMask(NewWorld);
+        }
+    }
+
+    GEngine->AddOnScreenDebugMessage(10231, 5.f, FColor::Red, FString::FromInt(LevelToIndex(NewWorld)));
+}
+
+int UPipelineCacheGameInstance::LevelToIndex_Implementation(const TSoftObjectPtr<UWorld> &InWorld)
+{
+    int* UserMaskIndex = WorldToMaskIndex.Find(InWorld);
+    if (!UserMaskIndex)
+    {
+        return INT32_MAX;
+    }
+    else
+    {
+        return *UserMaskIndex;
+    }
+}
+
+FShaderPipelineCache::BatchMode UPipelineCacheGameInstance::CompileModeHelper(E_PSOCompileMode CompileMode)
+{
+    switch (CompileMode)
+    {
+    case E_PSOCompileMode::Background:
+        return FShaderPipelineCache::BatchMode::Background;
+    case E_PSOCompileMode::Fast:
+        return FShaderPipelineCache::BatchMode::Fast;
+    case E_PSOCompileMode::Precompile:
+        return FShaderPipelineCache::BatchMode::Precompile;
+    default:
+        return FShaderPipelineCache::BatchMode::Background;
+    }
+}
+
+void UPipelineCacheGameInstance::SetUsageMask(TSoftObjectPtr<UWorld> InWorld)
+{
+    // Set the PSO Mask
+    auto LevelIndex = LevelToIndex(InWorld);
+
+    BPSOCacheMaskUnion Mask{};
+    Mask.LevelIndex = LevelIndex;
+
+    // Set Usage Mask
+    FShaderPipelineCache::SetGameUsageMaskWithComparison(Mask.Packed,
+                                                         &UPipelineCacheGameInstance::UsageMaskComparisonFunction);
+}
+
+void UPipelineCacheGameInstance::SetUsageMaskAndCompile(TSoftObjectPtr<UWorld> InWorld)
+{
+    SetUsageMask(InWorld);
+
+    // Begin a compilation of PSOs based on the current mask
+    // TODO: When logging, don't
+    FShaderPipelineCache::SetBatchMode(CompileModeHelper(AutomaticPSOCompileMode));
+
+    if (FShaderPipelineCache::IsBatchingPaused())
+    {
+        FShaderPipelineCache::ResumeBatching();
+    }
+}
+
+void UPipelineCacheGameInstance::ClearUsageMask()
+{
+    FShaderPipelineCache::SetGameUsageMaskWithComparison(UINT64_MAX,
+                                                         &UPipelineCacheGameInstance::UsageMaskComparisonFunction);
 }
