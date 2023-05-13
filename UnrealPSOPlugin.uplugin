@@ -1,0 +1,24 @@
+{
+	"FileVersion": 3,
+	"Version": 10000,
+	"VersionName": "1.0.0",
+	"FriendlyName": "Pipeline Cache Tool",
+	"Description": "Adds Pipeline Cache tools",
+	"Category": "Other",
+	"CreatedBy": "Chris Anderson",
+	"CreatedByURL": "https://github.com/CasperTheCat/UnrealPSOPlugin",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": true,
+	"IsBetaVersion": true,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "PipelineCacheDB",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	]
+}

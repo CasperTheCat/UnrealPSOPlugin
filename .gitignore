@@ -1,0 +1,24 @@
+Binaries
+DerivedDataCache
+Intermediate
+Saved
+.vscode
+.vs
+*.VC.db
+*.opensdf
+*.opendb
+*.sdf
+*.sln
+*.suo
+*.xcodeproj
+*.xcworkspace
+
+# Ignore FBX and PNG
+# They should be backed up in the blob storage
+*.png
+*.fbx
+
+# Ignore for this project
+# If these exist, it's due to testing in repo
+*.upipelinecache
+*.shk
