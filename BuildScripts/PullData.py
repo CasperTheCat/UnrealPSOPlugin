@@ -81,7 +81,7 @@ uploadURL = "/api/pco/date/after/"
 #     projectCredsB64 = f.readline()
 
 
-rootUrl = "https://acitestapp.herokuapp.com" + uploadURL
+rootUrl = "https://<domain>" + uploadURL
 
 retVal = DownloadData(rootUrl, "pipelinecache", sDate, MachineCredentialFile, ProjectCredentialFile, Platform, ShaderModel, "upipelinecache")
 if (0 != retVal):

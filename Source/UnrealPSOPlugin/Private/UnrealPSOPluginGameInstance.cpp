@@ -300,17 +300,20 @@ UPipelineCacheGameInstance::UPipelineCacheGameInstance()
 void UPipelineCacheGameInstance::Shutdown()
 {
 #if !(UE_BUILD_SHIPPING)
-    auto InPlaceString = ServerURL;
-    while (InPlaceString.EndsWith("/"))
+    if (!ServerURL.IsEmpty())
     {
-        InPlaceString.Split("/", &InPlaceString, nullptr, ESearchCase::IgnoreCase, ESearchDir::FromEnd);
+        auto InPlaceString = ServerURL;
+        while (InPlaceString.EndsWith("/"))
+        {
+            InPlaceString.Split("/", &InPlaceString, nullptr, ESearchCase::IgnoreCase, ESearchDir::FromEnd);
+        }
+
+        ServerURL = InPlaceString;
+
+        ShutdownInternalPSO();
+
+        UE_LOG(LogTemp, Warning, TEXT("UPipelineCacheGameInstance::Shutdown"));
     }
-
-    ServerURL = InPlaceString;
-
-    ShutdownInternalPSO();
-
-    UE_LOG(LogTemp, Warning, TEXT("UPipelineCacheGameInstance::Shutdown"));
 #endif
 
     Super::Shutdown();
